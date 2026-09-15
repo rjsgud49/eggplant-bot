@@ -6,9 +6,20 @@ import {
 } from "discord.js";
 import { askCharacter } from "./ai.js";
 import { config } from "./config.js";
-import { buildTackleReply } from "./emphasis.js";
+import { addEmphasisWord, buildTackleReply } from "./emphasis.js";
 import { getMemoryContext, rememberTurn } from "./memory.js";
 import { isTackleEnabled, setTackleEnabled } from "./tackle.js";
+
+/** 태클 관리 명령 응답: DM(본인만) + 원문 삭제 */
+async function replyTacklePrivate(message, text) {
+  try {
+    await message.author.send(text);
+  } catch {
+    const notice = await message.reply({ content: text });
+    setTimeout(() => notice.delete().catch(() => {}), 3000);
+  }
+  await message.delete().catch(() => {});
+}
 
 const client = new Client({
   intents: [
@@ -50,7 +61,7 @@ client.on(Events.MessageCreate, async (message) => {
   const raw = message.content.trim();
 
   // ===== 태클 기능 (가지야/페텔기우스와 완전 분리) =====
-  // 켜기/끄기/상태는 본인만 보이게 (DM + 명령 메시지 삭제)
+  // 관리 명령은 본인만 보이게 (DM + 명령 메시지 삭제)
   if (raw === "/태클켜기" || raw === "/태클끄기" || raw === "/태클상태") {
     let text;
     if (raw === "/태클상태") {
@@ -62,15 +73,22 @@ client.on(Events.MessageCreate, async (message) => {
         ? "태클 ON — 지정 단어가 채팅에 나오면 `# 단어?!`로 태클한다."
         : "태클 OFF — 더 이상 태클하지 않는다.";
     }
+    await replyTacklePrivate(message, text);
+    return;
+  }
 
-    try {
-      await message.author.send(text);
-    } catch {
-      // DM 불가 시에만 짧게 채널에 알리고 삭제
-      const notice = await message.reply({ content: text });
-      setTimeout(() => notice.delete().catch(() => {}), 3000);
+  if (raw === "/태클등록" || raw.startsWith("/태클등록 ")) {
+    const word = raw === "/태클등록" ? "" : raw.slice("/태클등록 ".length).trim();
+    const result = addEmphasisWord(word);
+    let text;
+    if (!result.ok && result.reason === "empty") {
+      text = "사용법: `/태클등록 단어`";
+    } else if (!result.ok && result.reason === "duplicate") {
+      text = `이미 등록됨: \`${result.word}\``;
+    } else {
+      text = `태클 등록됨: \`${result.word}\``;
     }
-    await message.delete().catch(() => {});
+    await replyTacklePrivate(message, text);
     return;
   }
 

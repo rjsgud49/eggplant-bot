@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,6 +20,23 @@ function loadEmphasisWords() {
 /** 매번 파일을 다시 읽어 재시작 없이 목록 반영 */
 export function getEmphasisWords() {
   return loadEmphasisWords();
+}
+
+/**
+ * 태클 단어 등록. 성공 시 { ok: true, word }, 실패 시 { ok: false, reason }
+ * reason: empty | duplicate
+ */
+export function addEmphasisWord(rawWord) {
+  const word = String(rawWord ?? "").trim().replace(/\s+/g, "");
+  if (!word) return { ok: false, reason: "empty" };
+
+  const existing = loadEmphasisWords().map((w) => w.replace(/\s+/g, ""));
+  if (existing.includes(word)) return { ok: false, reason: "duplicate", word };
+
+  const prev = existsSync(wordsPath) ? readFileSync(wordsPath, "utf8") : "";
+  const needsNewline = prev.length > 0 && !prev.endsWith("\n");
+  writeFileSync(wordsPath, `${prev}${needsNewline ? "\n" : ""}${word}\n`, "utf8");
+  return { ok: true, word };
 }
 
 /** 텍스트에서 걸린 태클 단어 (긴 단어 우선, 짧은 중복 제거) */
