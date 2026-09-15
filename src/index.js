@@ -50,19 +50,27 @@ client.on(Events.MessageCreate, async (message) => {
   const raw = message.content.trim();
 
   // ===== 태클 기능 (가지야/페텔기우스와 완전 분리) =====
-  if (raw === "/태클켜기" || raw === "/태클끄기") {
-    const enable = raw === "/태클켜기";
-    setTackleEnabled(message.guildId, enable);
-    await message.reply(
-      enable
+  // 켜기/끄기/상태는 본인만 보이게 (DM + 명령 메시지 삭제)
+  if (raw === "/태클켜기" || raw === "/태클끄기" || raw === "/태클상태") {
+    let text;
+    if (raw === "/태클상태") {
+      text = isTackleEnabled(message.guildId) ? "태클: ON" : "태클: OFF";
+    } else {
+      const enable = raw === "/태클켜기";
+      setTackleEnabled(message.guildId, enable);
+      text = enable
         ? "태클 ON — 지정 단어가 채팅에 나오면 `# 단어?!`로 태클한다."
-        : "태클 OFF — 더 이상 태클하지 않는다.",
-    );
-    return;
-  }
+        : "태클 OFF — 더 이상 태클하지 않는다.";
+    }
 
-  if (raw === "/태클상태") {
-    await message.reply(isTackleEnabled(message.guildId) ? "태클: ON" : "태클: OFF");
+    try {
+      await message.author.send(text);
+    } catch {
+      // DM 불가 시에만 짧게 채널에 알리고 삭제
+      const notice = await message.reply({ content: text });
+      setTimeout(() => notice.delete().catch(() => {}), 3000);
+    }
+    await message.delete().catch(() => {});
     return;
   }
 
