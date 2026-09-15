@@ -41,8 +41,10 @@ npm start
 | 키 | 설명 | 발급처 |
 | --- | --- | --- |
 | `DISCORD_TOKEN` | 봇 토큰 | [Discord Developer Portal](https://discord.com/developers/applications) → Application → Bot → Reset Token |
-| `GEMINI_API_KEY` | Gemini API 키 | [Google AI Studio](https://aistudio.google.com/apikey) |
-| `GEMINI_MODEL` | (선택) 모델명. 기본 `gemini-3.6-flash` | Gemini 모델 목록 |
+| `GEMINI_API_KEY` | Gemini API 키 (필수) | [Google AI Studio](https://aistudio.google.com/apikey) |
+| `GEMINI_API_KEY2` | (선택) 예비 키. 1번 한도 초과 시 자동 사용 | 동일 |
+| `GEMINI_API_KEY3` | (선택) 추가 예비 키 | 동일 |
+| `GEMINI_MODEL` | (선택) 모델명. 기본 `gemini-2.5-flash` | Gemini 모델 목록 |
 
 ### Discord 봇 권한 체크리스트
 
